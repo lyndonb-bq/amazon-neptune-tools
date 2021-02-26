@@ -61,6 +61,13 @@ public class CommonConnectionModule {
 
     private final Supplier<AmazonNeptune> amazonNeptuneClientSupplier;
 
+    public CommonConnectionModule(Supplier<AmazonNeptune> amazonNeptuneClientSupplier, String ep, boolean useSsl, boolean useIamAuth) {
+        endpoints.add(ep);
+        this.useSsl = useSsl;
+        this.useIamAuth = useIamAuth;
+        this.amazonNeptuneClientSupplier = amazonNeptuneClientSupplier;
+    }
+
     public CommonConnectionModule(Supplier<AmazonNeptune> amazonNeptuneClientSupplier) {
         this.amazonNeptuneClientSupplier = amazonNeptuneClientSupplier;
     }

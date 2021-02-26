@@ -18,6 +18,8 @@ import com.github.rvesse.airline.annotations.Cli;
 import com.github.rvesse.airline.annotations.Parser;
 import com.github.rvesse.airline.help.Help;
 
+import java.sql.SQLException;
+
 @Cli(name = "neptune-export.sh",
         description = "Export Neptune to CSV or JSON",
         defaultCommand = Help.class,
@@ -46,5 +48,9 @@ public class NeptuneExportCli {
 
     public static void main(String[] args) {
         new NeptuneExportRunner(args).run();
+    }
+
+    public static void runNonCLiExport(String[] args) throws SQLException {
+        new CreatePropertyGraphExportConfig().nonCliRun(args);
     }
 }

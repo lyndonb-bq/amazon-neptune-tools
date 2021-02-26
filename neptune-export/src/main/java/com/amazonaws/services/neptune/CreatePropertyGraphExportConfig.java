@@ -26,7 +26,9 @@ import com.github.rvesse.airline.annotations.help.Examples;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.Collection;
 
 @Examples(examples = {
@@ -61,6 +63,59 @@ public class CreatePropertyGraphExportConfig extends NeptuneExportBaseCommand im
 
     @Inject
     private PropertyGraphSchemaSamplingModule sampling = new PropertyGraphSchemaSamplingModule();
+
+    private boolean useSsl = false;
+    private boolean useIam = false;
+    private String directory = null;
+
+    public void nonCliRun(String[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-e")) {
+                awsCli.awsCliEndpointUrl = args[i + 1];
+            }
+            if (args[i].equals("--use-iam")) {
+                useIam = true;
+            }
+            if (args[i].equals("-d")) {
+                directory = args[i + 1];
+            }
+        }
+        awsCli.awsCliRegion = System.getenv("SERVICE_REGION");
+
+        cloneStrategy = new CloneClusterModule(awsCli);
+        connection = new CommonConnectionModule(awsCli, awsCli.awsCliEndpointUrl, useSsl, useIam);
+
+        try {
+            Timer.timedActivity("creating property graph config", (CheckedActivity.Runnable) () -> {
+                try (ClusterStrategy clusterStrategy = cloneStrategy.cloneCluster(connection.config(), concurrency.config())) {
+                    ExportStats stats = new ExportStats();
+
+                    // Could expect this to exist and could blow up, be careful
+                    Directories directories = target.createDirectories(DirectoryStructure.Config, new File(directory));
+
+                    JsonResource<GraphSchema> configFileResource = directories.configFileResource();
+                    Collection<ExportSpecification<?>> exportSpecifications = scope.exportSpecifications(stats, labModeFeatures());
+
+                    try (NeptuneGremlinClient client = NeptuneGremlinClient.create(clusterStrategy, serialization.config());
+                         GraphTraversalSource g = client.newTraversalSource()) {
+
+                        CreateGraphSchemaCommand createGraphSchemaCommand = sampling.createSchemaCommand(exportSpecifications, g);
+
+                        GraphSchema graphSchema = createGraphSchemaCommand.execute();
+
+                        configFileResource.save(graphSchema);
+                        configFileResource.writeResourcePathAsMessage(target);
+                    }
+
+                    Path outputPath = directories.writeConfigFilePathAsReturnValue(target);
+                    onExportComplete(outputPath, stats);
+
+                }
+            });
+        } catch (Exception e) {
+            throw new SQLException(e.getMessage());
+        }
+    }
 
     @Override
     public void run() {

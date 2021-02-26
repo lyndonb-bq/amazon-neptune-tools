@@ -12,11 +12,11 @@ import java.util.function.Supplier;
 public class AwsCliModule implements Supplier<AmazonNeptune> {
     @Option(name = {"--aws-cli-endpoint-url"}, description = "AWS CLI endpoint URL.", hidden = true)
     @Once
-    private String awsCliEndpointUrl;
+    public String awsCliEndpointUrl;
 
     @Option(name = {"--aws-cli-region"}, description = "AWS CLI region.", hidden = true)
     @Once
-    private String awsCliRegion;
+    public String awsCliRegion;
 
     @Override
     public AmazonNeptune get() {

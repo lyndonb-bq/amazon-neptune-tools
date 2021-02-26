@@ -71,6 +71,11 @@ public class PropertyGraphTargetModule implements CommandWriter {
         return Directories.createFor(directoryStructure, directory, exportId, tag );
     }
 
+    public Directories createDirectories(DirectoryStructure directoryStructure, File dir) throws IOException {
+        directory = dir;
+        return Directories.createFor(directoryStructure, directory, exportId, tag );
+    }
+
     public PropertyGraphTargetConfig config(Directories directories, PrinterOptions printerOptions){
         KinesisConfig kinesisConfig = new KinesisConfig(streamName, region);
         return new PropertyGraphTargetConfig(directories, kinesisConfig, printerOptions, format, output, inferSchema, mergeFiles);
